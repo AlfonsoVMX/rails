@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "active_support/enumerable"
+
 module ActiveSupport
   module EnumerableCoreExt # :nodoc:
     module Constants
@@ -260,6 +262,10 @@ module Enumerable
     when 0   then raise ActiveSupport::EnumerableCoreExt::SoleItemExpectedError, "no item found"
     when 2.. then raise ActiveSupport::EnumerableCoreExt::SoleItemExpectedError, "multiple items found"
     end
+  end
+
+  def with_many
+    ActiveSupport::Many.new(self)
   end
 end
 
