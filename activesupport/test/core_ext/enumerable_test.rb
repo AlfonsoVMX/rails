@@ -369,4 +369,51 @@ class EnumerableTests < ActiveSupport::TestCase
       object.extend(Enumerable)
     end
   end
+
+  def test_with_many
+    values = [1,2,2,3]
+    many = ActiveSupport::Many.new(values)
+    
+    #Left Identity
+    f = ->(enumerable){ ActiveSupport::Many.new(enumerable.lazy.map{|x| x + 1}) }
+    assert_equal values.with_many.map(f).values, f.call(values).values
+
+    #Right Identity
+    f = ->(enumerable){ ActiveSupport::Many.new(enumerable) }
+    assert_equal many.map(f).values, many.values
+
+    #Associativity
+    f = ->(enumerable){ ActiveSupport::Many.new(enumerable.lazy.map{|x| x * 2}) }
+    g = ->(enumerable){ ActiveSupport::Many.new(enumerable.lazy.map{|x| x + 6}) }    
+    
+    assert_equal many.map(f).map(g).values,         many.map(->(values){ f.call(values).map(g) }).values
+    assert_equal (many * 2 + 6).values,             many.map(->(values){ f.call(values).map(g) }).values
+    assert_equal (values.with_many * 2 + 6).values, many.map(->(values){ f.call(values).map(g) }).values
+
+    enumerable = [0,1,1,2]
+
+    assert_equal [1,2,2,3], (enumerable.with_many + 1).values
+    assert_equal [2,4,4,6], (enumerable.with_many.+(1).*(2)).values
+    assert_equal ['2','4','4','6'], (enumerable.with_many.+(1).*(2).map(:to_s)).values
+    
+    not_enumerables = ['some stirng', nil, Object.new, Object, 0, 0.0, ->{}]
+
+    not_enumerables.each do |value|
+      assert_nil ActiveSupport::Many.new(value).map(:to_s).values
+    end
+
+    payments = [Payment.new(5), Payment.new(1), Payment.new(3)]
+
+    assert_equal [5,1,3], payments.with_many.map(->(_){_.map(&:price)}).values
+    assert_equal [5,1,3], payments.with_many.map(f:->(p){ p.price }).values
+    assert_equal [5,1,3], payments.with_many.map(:price).values
+    assert_equal [5,1,3], payments.with_many.price.values
+    assert_equal ['5','1','3'], payments.with_many.price.map(:to_s).values
+    assert_equal [5.0,1.0,3.0], payments.with_many.price.map(:to_s).map(:to_f).values
+    assert_equal [Payment.new(5.0),Payment.new(1.0),Payment.new(3.0)], payments.with_many.price.map(->(_){_.map{|p| Payment.new(p) }}).values
+    assert_equal [nil,nil,nil], payments.with_many.invalid_property.values
+    assert_equal [true,true,true], payments.with_many.invalid_property.map(:nil?).values
+    assert_equal ['true','true','true'], payments.with_many.invalid_property.map(:nil?).map(:to_s).values
+    assert_equal ['t','r','u','e','t','r','u','e','t','r','u','e'], payments.with_many.invalid_property.map(:nil?).map(:to_s).split('').values
+  end
 end
