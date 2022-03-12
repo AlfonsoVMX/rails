@@ -374,15 +374,15 @@ class EnumerableTests < ActiveSupport::TestCase
     values = [1,2,2,3]
     many = ActiveSupport::Many.new(values)
     
-    #Left Identity
+    #Test Left Identity
     f = ->(enumerable){ ActiveSupport::Many.new(enumerable.lazy.map{|x| x + 1}) }
     assert_equal values.with_many.map(f).values, f.call(values).values
 
-    #Right Identity
+    #Test Right Identity
     f = ->(enumerable){ ActiveSupport::Many.new(enumerable) }
     assert_equal many.map(f).values, many.values
 
-    #Associativity
+    #Test Associativity
     f = ->(enumerable){ ActiveSupport::Many.new(enumerable.lazy.map{|x| x * 2}) }
     g = ->(enumerable){ ActiveSupport::Many.new(enumerable.lazy.map{|x| x + 6}) }    
     
@@ -390,6 +390,7 @@ class EnumerableTests < ActiveSupport::TestCase
     assert_equal (many * 2 + 6).values,             many.map(->(values){ f.call(values).map(g) }).values
     assert_equal (values.with_many * 2 + 6).values, many.map(->(values){ f.call(values).map(g) }).values
 
+    #Test Misc
     enumerable = [0,1,1,2]
 
     assert_equal [1,2,2,3], (enumerable.with_many + 1).values

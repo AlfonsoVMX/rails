@@ -16,7 +16,7 @@ module ActiveRecord
     VALUE_METHODS = MULTI_VALUE_METHODS + SINGLE_VALUE_METHODS + CLAUSE_METHODS
 
     include Enumerable
-    include FinderMethods, Calculations, SpawnMethods, QueryMethods, Batches, Explain, Delegation
+    include FinderMethods, Calculations, SpawnMethods, QueryMethods, Batches, Explain, Delegation, Many
 
     attr_reader :table, :klass, :loaded, :predicate_builder
     attr_accessor :skip_preloading_value

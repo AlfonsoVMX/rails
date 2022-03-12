@@ -109,6 +109,7 @@ module ActiveRecord
       autoload :SpawnMethods
       autoload :Batches
       autoload :Delegation
+      autoload :Relation
     end
   end
 

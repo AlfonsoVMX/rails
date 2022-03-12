@@ -185,6 +185,18 @@ module ActiveRecord
           end
           singleton_class.send(:ruby2_keywords, name)
 
+          # AVMX: Not sure were to propertly define @@_scope_names and register_scope_name.
+          self.class_eval(%(
+            @@_scopes_names = []
+            def self.scopes_names
+              @@_scopes_names
+            end
+            def self.register_scope_name(scope_name)
+              @@_scopes_names << scope_name
+            end
+          )) unless respond_to?(:scopes_names)
+          register_scope_name(name)
+
           generate_relation_method(name)
         end
 
