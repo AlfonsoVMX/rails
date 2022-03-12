@@ -1,19 +1,21 @@
 module ActiveRecord
   module Many
     module Static
-      def embellish(relation)
+      def self.embellish(relation)
         klass = relation.klass
         klass.class_eval(ar_inner_class_string(relation)) unless Kernel.const_defined?("#{klass.name}::Many")
+        with_many_class = klass.const_get("Many")
+        with_many_class.new(relation)
       end
 
-      def ar_inner_class_string(relation)
+      def self.ar_inner_class_string(relation)
         methods = {
           relation: [:where,:order,:to_sql],
           reflection: relation.has_many_reflections_names,
           scope: relation.klass.respond_to?('scopes_names') ? relation.klass.scopes_names : []
         }
         %(
-          class WithMany < ActiveSupport::WithMany
+          class Many < ActiveSupport::Many
     
             def initialize(enumerable)
               super
@@ -22,11 +24,11 @@ module ActiveRecord
             def map_method(kind, name, *args, &block)
               case kind
               when :relation
-                Relation::Many.embellish(@enumerable.send(name,*args, &block))
+                ActiveRecord::Many::Static.embellish(@enumerable.send(name,*args, &block))
               when :reflection
-                Relation::Many.embellish(@enumerable.reverse_to(name))
+                ActiveRecord::Many::Static.embellish(@enumerable.reverse_to(name))
               when :scope
-                Relation::Many.embellish(@enumerable.merge(@enumerable.klass.send(name, *args, &block)))
+                ActiveRecord::Many::Static.embellish(@enumerable.merge(@enumerable.klass.send(name, *args, &block)))
               end
             end
     
@@ -47,14 +49,14 @@ module ActiveRecord
     end
 
     def with_many
-      Many.embellish(self.current_scope)
+      Many::Static.embellish(self.current_scope)
     end
 
     def reverse_to(name)
       reflection = self.klass._reflections[name]
 
       reflection_inverse_name = 
-        reflection.inverse_name ||
+        reflection.send(:inverse_name) ||
         reflection.options[:as] ||
         self.klass.name.underscore.to_sym ||
         nil
